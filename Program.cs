@@ -21,19 +21,19 @@ app.UseHttpsRedirection();
 
 app.UseAntiforgery();
 
-app.Use(async (context, next) =>
-{
-	var allowedReferrer = new Uri("http://room1.runasp.net/");
+// app.Use(async (context, next) =>
+// {
+// 	var allowedReferrer = new Uri("http://room1.runasp.net/");
 
-	if (!context.Request.Headers.TryGetValue("Referer", out var refererValue) ||
-		!Uri.TryCreate(refererValue.ToString(), UriKind.Absolute, out var refererUri) ||
-		refererUri.Host != allowedReferrer.Host)
-	{
-		context.Response.Redirect("http://room1.runasp.net/");
-		return;
-	}
-	await next();
-});
+// 	if (!context.Request.Headers.TryGetValue("Referer", out var refererValue) ||
+// 		!Uri.TryCreate(refererValue.ToString(), UriKind.Absolute, out var refererUri) ||
+// 		refererUri.Host != allowedReferrer.Host)
+// 	{
+// 		context.Response.Redirect("http://room1.runasp.net/");
+// 		return;
+// 	}
+// 	await next();
+// });
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
