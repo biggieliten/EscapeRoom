@@ -40,8 +40,6 @@ rel="stylesheet">
   <div class="rf-game @(Active(Screen.Game))">
     <div class="rf-topbar">
       <button class="rf-tb left" @onclick="() => _riddleOpen = true">Gåtan</button>
-      <span class="rf-timer">@TimeStr</span>
-      <button class="rf-tb right" @onclick="() => _hintOpen = true">Tips</button>
     </div>
 
     <div id="rf-wrap" class="rf-wrap">
@@ -86,7 +84,6 @@ rel="stylesheet">
 
             <!-- HINT SHEET -->
             <div class="rf-sheet hint @(_hintOpen ? "show" : "")">
-              <div class="h">Tips</div>
               <p>Tänk på vad varje rad beskriver: något som gnistrar på natthimlen, något som ändrar form natt för natt, en grön
                 besökare, och något som flyger med eld i svansen. Rotera kristallen, hitta de fyra symbolerna och läs siffran
                 under var och en — i ordning 1 till 4. Två sidor är lurendrejare.</p>
