@@ -2,6 +2,8 @@
 @implements IDisposable
 @inject IJSRuntime JS
 @rendermode InteractiveServer
+@inject NavigationManager Nav
+
 
 @*
     Rymdflykt — afterwork escape room (Blazor component).
@@ -95,10 +97,12 @@ rel="stylesheet">
                 <div class="rf-ring">✦</div>
                 <div class="rf-eyebrow green">Luckan öppnas</div>
                 <h1 class="rf-h1 small">NI FLYDDE!</h1>
-                <div class="rf-wintime"><small>Lagets tid</small><span>@TimeStr</span></div>
                 <p class="rf-story">Kristallnyckeln lyser <strong class="green">grönt</strong> och luckan glider upp. Laget svävar
                   ut bland stjärnorna — fria till sist.</p>
-                  <button class="rf-btn ghost" @onclick="StartGame">Ny runda</button>
+                  <div class="button-group">
+                    @* <button class="rf-btn ghost" @onclick="StartGame">Ny runda</button> *@
+                    <button class="rf-btn ghost" @onclick="NextGame">Nästa spel</button>
+                  </div>
                 </section>
               </div>
 
@@ -620,6 +624,8 @@ rel="stylesheet">
   bool _riddleOpen;
   bool _hintOpen;
 
+  bool _hasFInished = false;
+
   int _elapsed;
   System.Timers.Timer? _timer;
 
@@ -654,6 +660,12 @@ rel="stylesheet">
     _answer = string.Concat(_clueOrder.Select(id => _digit[id]));
   }
 
+  void NextGame()
+  {
+    _hasFInished = true;
+    Console.WriteLine(_hasFInished);
+    Nav.NavigateTo("http://escape-room-3.runasp.net");
+  }
   void StartGame()
   {
     AssignDigits();
@@ -666,16 +678,6 @@ rel="stylesheet">
     _elapsed = 0;
     _screen = Screen.Game;
     _needInit = true;
-    @* StartTimer(); *@
-  }
-
-  void StartTimer()
-  {
-    _timer?.Stop();
-    _timer ??= new System.Timers.Timer(1000) { AutoReset = true };
-    _timer.Elapsed -= OnTick;
-    _timer.Elapsed += OnTick;
-    _timer.Start();
   }
 
   async void OnTick(object? s, System.Timers.ElapsedEventArgs e)
