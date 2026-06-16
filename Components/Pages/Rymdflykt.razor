@@ -633,6 +633,10 @@ rel="stylesheet">
   string TimeStr => $"{_elapsed / 60}:{_elapsed % 60:D2}";
   string Active(Screen s) => _screen == s ? "active" : "";
 
+  [Parameter]
+  [SupplyParameterFromQuery(Name = "t")]
+  public string? StartTime { get; set; }
+
   string SlotClass(int i)
   {
     var c = "slot";
@@ -661,7 +665,7 @@ rel="stylesheet">
   void NextGame()
   {
     _hasFInished = true;
-    Nav.NavigateTo("http://escape-room-3.runasp.net");
+    Nav.NavigateTo("http://escape-room-3.runasp.net" + $"/?t={StartTime}");
   }
   void StartGame()
   {
