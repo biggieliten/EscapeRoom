@@ -1,0 +1,375 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+#root {
+  font-family: var(--font-mono, monospace);
+  color: var(--color-text-primary);
+  padding: 12px;
+  user-select: none;
+}
+#scene {
+  width: 100%;
+  aspect-ratio: 1;
+  max-width: 356px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--border-radius-lg);
+  border: 0.5px solid #534AB7;
+  background: #04342C;
+  touch-action: none;
+  cursor: grab;
+}
+#scene:active { cursor: grabbing; }
+canvas { display: block; width: 100%; height: 100%; }
+#drag-hint {
+  font-size: 11px;
+  color: #5DCAA5;
+  text-align: center;
+  letter-spacing: 1px;
+  margin: 5px 0 8px;
+  opacity: 0.75;
+}
+#hud {
+  background: var(--color-background-secondary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-md);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+#face-name { font-size: 11px; color: #9FE1CB; letter-spacing: 2px; margin-bottom: 5px; }
+#clue-box { font-size: 13px; color: var(--color-text-secondary); line-height: 1.55; min-height: 52px; }
+#nav-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.nbtn {
+  height: 30px;
+  border: 0.5px solid #534AB7;
+  border-radius: var(--border-radius-md);
+  background: transparent;
+  color: #AFA9EC;
+  font-size: 10px;
+  cursor: pointer;
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 1px;
+  transition: background 0.15s;
+}
+.nbtn:hover, .nbtn.on { background: #3C3489; color: #EEEDFE; }
+#slots {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0,1fr));
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.slot {
+  aspect-ratio: 1;
+  border: 0.5px solid #534AB7;
+  border-radius: var(--border-radius-md);
+  background: #26215C;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  transition: border-color 0.2s, background 0.2s;
+}
+.slot.lit { border-color: #9FE1CB; }
+.slot.done { border-color: #5DCAA5; background: #085041; }
+#entry-row { display: flex; gap: 7px; margin-bottom: 6px; }
+#code-in {
+  flex: 1;
+  height: 38px;
+  background: var(--color-background-primary);
+  border: 0.5px solid #534AB7;
+  border-radius: var(--border-radius-md);
+  color: #9FE1CB;
+  font-family: var(--font-mono, monospace);
+  font-size: 15px;
+  padding: 0 10px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+#go-btn {
+  height: 38px;
+  padding: 0 14px;
+  background: #3C3489;
+  border: 0.5px solid #7F77DD;
+  border-radius: var(--border-radius-md);
+  color: #CECBF6;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: var(--font-mono, monospace);
+  transition: background 0.15s;
+}
+#go-btn:hover { background: #534AB7; }
+#dots { display: flex; gap: 5px; justify-content: center; margin-bottom: 5px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #534AB7; transition: background 0.2s; }
+.dot.used { background: #E24B4A; }
+#msg { font-size: 12px; text-align: center; min-height: 18px; margin-bottom: 5px; }
+.err { color: #E24B4A; } .ok { color: #5DCAA5; }
+#hint-btn {
+  display: block; width: 100%; height: 30px;
+  background: transparent;
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-md);
+  color: var(--color-text-secondary);
+  font-size: 11px; cursor: pointer;
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 1px;
+}
+#hint-btn:hover { border-color: #534AB7; color: #CECBF6; }
+#win {
+  display: none;
+  position: absolute; inset: 0;
+  background: #04342Cee;
+  align-items: center; justify-content: center;
+  flex-direction: column; gap: 10px;
+  border-radius: var(--border-radius-lg);
+}
+#win.show { display: flex; }
+#win-txt { color: #5DCAA5; font-size: 14px; font-weight: 500; text-align: center; padding: 0 20px; line-height: 1.6; }
+</style>
+
+<div id="root">
+  <h2 style="position:absolute;width:1px;height:1px;overflow:hidden">Alien orb-pussel — snurra orben, skanna varje sida och knäck 4-teckens varpkoden</h2>
+
+  <div id="scene" aria-label="3D-orb — dra för att rotera">
+    <canvas id="c"></canvas>
+    <div id="win"><div id="win-txt">VARPPORT ÖPPNAD<br>Sektor Vael-9 upplåst.<br>Bra jobbat, befälhavare.</div></div>
+  </div>
+  <p id="drag-hint">dra eller svep för att rotera · hitta alla 4 sidor</p>
+
+  <div id="hud">
+    <div id="face-name">rotera för att skanna en sida</div>
+    <div id="clue-box">Snurra på Xyrath-orben för att avslöja varje sida. Varje sida har en glyf och en ledtråd. Lös alla fyra och ange den 4-teckens varpkoden nedan.</div>
+  </div>
+
+  <div id="nav-row">
+    <button class="nbtn" data-fi="0">topp</button>
+    <button class="nbtn" data-fi="1">fram</button>
+    <button class="nbtn" data-fi="2">höger</button>
+    <button class="nbtn" data-fi="3">botten</button>
+    <button class="nbtn" data-fi="4">bak</button>
+    <button class="nbtn" data-fi="5">vänster</button>
+  </div>
+
+  <div id="slots">
+    <div class="slot" id="s0"></div>
+    <div class="slot" id="s1"></div>
+    <div class="slot" id="s2"></div>
+    <div class="slot" id="s3"></div>
+    <div class="slot" id="s4"></div>
+    <div class="slot" id="s5"></div>
+  </div>
+
+  <div id="entry-row">
+    <input id="code-in" type="text" maxlength="4" placeholder="_ _ _ _" autocomplete="off" spellcheck="false" aria-label="Ange 4-teckens varpkod"/>
+    <button id="go-btn" onclick="submit()">SKICKA</button>
+  </div>
+
+  <div id="dots">
+    <div class="dot" id="d0"></div><div class="dot" id="d1"></div>
+    <div class="dot" id="d2"></div><div class="dot" id="d3"></div>
+    <div class="dot" id="d4"></div>
+  </div>
+  <div id="msg"></div>
+  <button id="hint-btn" onclick="hint()">ledtråd för denna sida (kostar 1 försök)</button>
+</div>
+
+<script>
+const FACES = [
+  {
+    id:0, name:"toppyta", glyph:"★", letter:"7",
+    clue:"Aliens besättning har 3 medlemmar. Varje medlem får 2 ransoner per cykel. Hur många ransoner totalt?",
+    hint:"3 besättning × 2 ransoner = 6... men befälhavaren tar alltid en extra. Totalt: 7."
+  },
+  {
+    id:1, name:"framyta", glyph:"◈", letter:"S",
+    clue:"Det utomjordiska fartyget heter något som börjar på bokstaven som är nummer 19 i det svenska alfabetet. Vilken bokstav är det?",
+    hint:"Räkna till 19 i alfabetet: A=1, B=2, C=3... S=19. Bokstaven är S."
+  },
+  {
+    id:2, name:"högeryta", glyph:"⬡", letter:"4",
+    clue:"En konstellation har 8 stjärnor men hälften har exploderat som supernovor. Hur många syns fortfarande?",
+    hint:"Hälften av 8 är 4. Fyra stjärnor är kvar."
+  },
+  {
+    id:3, name:"bottenyta", glyph:"✦", letter:"R",
+    clue:"Aliens nödsignal sänds från en planet uppkallad efter den 18:e bokstaven i det svenska alfabetet. Vilken bokstav är det?",
+    hint:"Räkna till 18: A=1, B=2... R=18. Planeten heter Planet R."
+  },
+  {
+    id:4, name:"bakyta", glyph:"⬢", letter:"X",
+    clue:"På varje utomjordisk skattekarta markeras målet med samma bokstav som används på svenska kartor. Vilken bokstav är det?",
+    hint:"X markerar platsen — precis som det står i ledtråden. Bokstaven är X."
+  },
+  {
+    id:5, name:"vänsteryta", glyph:"◉", letter:"9",
+    clue:"Warpdrivens bränsletank rymmer 12 celler. Vid uppskjutning förbrukas 3. Hur många återstår?",
+    hint:"12 minus 3 = 9. Nio celler kvar."
+  }
+];
+
+const ANSWER = "7S4R";
+const FACE_COLS = ["#185FA5","#3B6D11","#534AB7","#712B13","#633806","#085041"];
+const FACE_MID  = ["#378ADD","#639922","#7F77DD","#D85A30","#BA7517","#1D9E75"];
+
+const CUBE_NORMALS = [[0,1,0],[0,0,1],[1,0,0],[0,-1,0],[0,0,-1],[-1,0,0]];
+const CUBE_VERTS = [
+  [[-1,1,-1],[1,1,-1],[1,1,1],[-1,1,1]],
+  [[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]],
+  [[1,-1,-1],[1,-1,1],[1,1,1],[1,1,-1]],
+  [[-1,-1,-1],[1,-1,-1],[1,-1,1],[-1,-1,1]],
+  [[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1]],
+  [[-1,-1,1],[-1,-1,-1],[-1,1,-1],[-1,1,1]]
+];
+
+let rx=0.45, ry=0.6;
+let drag=false, lx=0, ly=0;
+let found=new Set(), attempts=5, solved=false, curFace=-1;
+let autoId=null;
+
+const cv=document.getElementById("c");
+const ctx=cv.getContext("2d");
+
+function resize(){ const r=cv.parentElement.getBoundingClientRect(); cv.width=r.width; cv.height=r.height; }
+resize();
+window.addEventListener("resize",()=>{ resize(); draw(); });
+
+const dot3=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const norm3=v=>{ const l=Math.sqrt(dot3(v,v)); return l?v.map(x=>x/l):v; };
+function mulMV(m,v){ return [m[0]*v[0]+m[1]*v[1]+m[2]*v[2],m[3]*v[0]+m[4]*v[1]+m[5]*v[2],m[6]*v[0]+m[7]*v[1]+m[8]*v[2]]; }
+function rxM(a){ const c=Math.cos(a),s=Math.sin(a); return [1,0,0,0,c,-s,0,s,c]; }
+function ryM(a){ const c=Math.cos(a),s=Math.sin(a); return [c,0,s,0,1,0,-s,0,c]; }
+function mulMM(a,b){ return [a[0]*b[0]+a[1]*b[3]+a[2]*b[6],a[0]*b[1]+a[1]*b[4]+a[2]*b[7],a[0]*b[2]+a[1]*b[5]+a[2]*b[8],a[3]*b[0]+a[4]*b[3]+a[5]*b[6],a[3]*b[1]+a[4]*b[4]+a[5]*b[7],a[3]*b[2]+a[4]*b[5]+a[5]*b[8],a[6]*b[0]+a[7]*b[3]+a[8]*b[6],a[6]*b[1]+a[7]*b[4]+a[8]*b[7],a[6]*b[2]+a[7]*b[5]+a[8]*b[8]]; }
+function proj(v,cx,cy,sc){ const z=v[2]+3, f=sc/z; return [cx+v[0]*f, cy-v[1]*f]; }
+function lerp(a,b,t){ const ah=a.replace("#",""),bh=b.replace("#",""); const ar=parseInt(ah.slice(0,2),16),ag=parseInt(ah.slice(2,4),16),ab=parseInt(ah.slice(4,6),16); const br=parseInt(bh.slice(0,2),16),bg=parseInt(bh.slice(2,4),16),bb=parseInt(bh.slice(4,6),16); return `rgb(${Math.round(ar+(br-ar)*t)},${Math.round(ag+(bg-ag)*t)},${Math.round(ab+(bb-ab)*t)})`; }
+
+function draw(){
+  const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  const cx=W/2,cy=H/2,sc=Math.min(W,H)*0.52;
+  const M=mulMM(rxM(rx),ryM(ry));
+  const light=norm3([0.5,0.8,1]);
+
+  const fdata=FACES.map((face,i)=>{
+    const rn=mulMV(M,CUBE_NORMALS[i]);
+    const ndl=Math.max(0,dot3(rn,light));
+    const verts=CUBE_VERTS[i].map(v=>mulMV(M,v));
+    const pr=verts.map(v=>proj(v,cx,cy,sc));
+    const avgZ=verts.reduce((s,v)=>s+v[2],0)/4;
+    return {face,i,rn,ndl,verts,pr,avgZ};
+  });
+  fdata.sort((a,b)=>a.avgZ-b.avgZ);
+
+  let front=-1,best=0.35;
+  fdata.forEach(f=>{ if(f.rn[2]>best){ best=f.rn[2]; front=f.i; } });
+
+  fdata.forEach(({face,i,rn,ndl,pr})=>{
+    if(rn[2]<-0.05) return;
+    ctx.beginPath();
+    ctx.moveTo(pr[0][0],pr[0][1]);
+    for(let k=1;k<4;k++) ctx.lineTo(pr[k][0],pr[k][1]);
+    ctx.closePath();
+    ctx.fillStyle=lerp(FACE_COLS[i],FACE_MID[i],ndl*0.75);
+    ctx.fill();
+    ctx.strokeStyle=`rgba(160,220,255,${0.12+ndl*0.18})`;
+    ctx.lineWidth=0.5; ctx.stroke();
+
+    const fcx=pr.reduce((s,p)=>s+p[0],0)/4;
+    const fcy=pr.reduce((s,p)=>s+p[1],0)/4;
+    const alpha=Math.max(0,(rn[2]-0.08)/0.92);
+
+    if(i===front){
+      ctx.globalAlpha=alpha;
+      ctx.font=`bold ${Math.round(sc*0.2)}px monospace`;
+      ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillStyle=found.has(i)?"#9FE1CB":"rgba(255,255,255,0.22)";
+      ctx.fillText(face.glyph,fcx,fcy-(sc*0.03));
+      if(found.has(i)){
+        ctx.font=`${Math.round(sc*0.085)}px monospace`;
+        ctx.fillStyle="#9FE1CB";
+        ctx.fillText(face.name,fcx,fcy+(sc*0.14));
+      }
+      ctx.globalAlpha=1;
+    } else if(rn[2]>0.18){
+      ctx.globalAlpha=alpha*0.35;
+      ctx.font=`${Math.round(sc*0.1)}px monospace`;
+      ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillStyle="#fff";
+      ctx.fillText(face.glyph,fcx,fcy);
+      ctx.globalAlpha=1;
+    }
+  });
+
+  if(front!==curFace){ curFace=front; onFace(front); }
+}
+
+function onFace(i){
+  document.querySelectorAll(".nbtn").forEach((b,idx)=>b.classList.toggle("on",idx===i));
+  if(i<0) return;
+  const f=FACES[i];
+  document.getElementById("face-name").textContent="skannar: "+f.name;
+  document.getElementById("clue-box").textContent=f.clue;
+  if(!found.has(i)){
+    found.add(i);
+    const sl=document.getElementById("s"+i);
+    if(sl){ sl.textContent=f.glyph; sl.classList.add("lit"); setTimeout(()=>sl.classList.remove("lit"),700); }
+  }
+}
+
+function snap(fi){
+  const T=[[0,-0.5],[0.5,-0.5],[0.5,0],[Math.PI,-0.5],[0.5,0.5],[0.5,Math.PI]];
+  const [tx,ty]=T[fi]||[0,0];
+  const sx=rx,sy=ry,dx=tx-sx,dy=ty-sy;
+  let t=0;
+  function step(){ t+=0.07; if(t>=1){rx=tx;ry=ty;draw();return;} const e=1-(1-t)*(1-t); rx=sx+dx*e;ry=sy+dy*e; draw(); requestAnimationFrame(step); }
+  requestAnimationFrame(step);
+}
+document.querySelectorAll(".nbtn").forEach((b,i)=>b.addEventListener("click",()=>snap(i)));
+
+const sc2=document.getElementById("scene");
+sc2.addEventListener("mousedown",e=>{drag=true;lx=e.clientX;ly=e.clientY;clearInterval(autoId);});
+window.addEventListener("mouseup",()=>drag=false);
+window.addEventListener("mousemove",e=>{ if(!drag)return; ry+=(e.clientX-lx)*0.013; rx-=(e.clientY-ly)*0.013; lx=e.clientX;ly=e.clientY; draw(); });
+sc2.addEventListener("touchstart",e=>{drag=true;lx=e.touches[0].clientX;ly=e.touches[0].clientY;clearInterval(autoId);e.preventDefault();},{passive:false});
+window.addEventListener("touchend",()=>drag=false);
+window.addEventListener("touchmove",e=>{ if(!drag)return; ry+=(e.touches[0].clientX-lx)*0.013; rx-=(e.touches[0].clientY-ly)*0.013; lx=e.touches[0].clientX;ly=e.touches[0].clientY; draw(); e.preventDefault(); },{passive:false});
+
+autoId=setInterval(()=>{ if(!drag&&!solved){ry+=0.008;draw();} },30);
+
+function submit(){
+  if(solved) return;
+  const val=document.getElementById("code-in").value.toUpperCase().trim();
+  const m=document.getElementById("msg");
+  if(val.length<4){ m.textContent="ange en 4-teckens kod"; m.className="err"; return; }
+  if(val===ANSWER){
+    solved=true; m.textContent="";
+    document.getElementById("win").classList.add("show");
+    FACES.forEach((_,i)=>{ const sl=document.getElementById("s"+i); if(sl){sl.textContent=FACES[i].glyph;sl.classList.add("done");} });
+    setTimeout(()=>{ if(typeof sendPrompt==="function") sendPrompt("Jag knäckte Xyrath-orben! Varpportalen till Sektor Vael-9 är öppen. Vad hittar jag där?"); },1800);
+  } else {
+    attempts--;
+    const dot=document.getElementById("d"+(4-attempts));
+    if(dot) dot.classList.add("used");
+    if(attempts<=0){ m.textContent="utelåst. koden var: "+ANSWER; m.className="err"; document.getElementById("go-btn").disabled=true; }
+    else { m.textContent=`fel kod — ${attempts} försök kvar`; m.className="err"; }
+  }
+}
+document.getElementById("code-in").addEventListener("keydown",e=>{ if(e.key==="Enter") submit(); });
+
+function hint(){
+  const m=document.getElementById("msg");
+  if(attempts<=1){ m.textContent="inte tillräckligt med försök för en ledtråd"; m.className="err"; return; }
+  if(curFace<0){ m.textContent="vänd mot en sida först"; m.className="err"; return; }
+  attempts--;
+  const dot=document.getElementById("d"+(4-attempts));
+  if(dot) dot.classList.add("used");
+  document.getElementById("clue-box").textContent="ledtråd: "+FACES[curFace].hint;
+  m.textContent="ledtråd laddad för "+FACES[curFace].name; m.className="ok";
+}
+
+draw();
+</script>
