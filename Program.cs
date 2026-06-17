@@ -23,6 +23,16 @@ app.UseAntiforgery();
 
 app.Use(async (context, next) =>
 {
+	var path = context.Request.Path.Value ?? "";
+
+	if (path.StartsWith("/_blazor") ||
+		path.StartsWith("/_framework") ||
+		path.Contains("."))
+	{
+		await next();
+		return;
+	}
+
 	var allowedReferrer = new Uri("http://room1.runasp.net/");
 
 	if (!context.Request.Headers.TryGetValue("Referer", out var refererValue) ||
@@ -32,6 +42,7 @@ app.Use(async (context, next) =>
 		context.Response.Redirect("http://room1.runasp.net/");
 		return;
 	}
+
 	await next();
 });
 
